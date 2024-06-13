@@ -33,6 +33,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+app.get('/', (req, res) => {
+    try {
+        return res.status(200).json({status: "Backend is working"})
+    } catch (error) {
+        return res.status(400).json({status: "Backend is not working"})
+    }
+})
+
 // Convert XML to JSON
 app.post('/convert/xml-to-json', (req, res) => {
     try {
@@ -312,3 +320,5 @@ app.post('/validate/css', async (req, res) => {
 app.listen(4000, () => {
     console.log("Server started at port 4000");
 });
+
+module.exports = app;
