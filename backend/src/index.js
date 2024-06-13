@@ -13,21 +13,9 @@ import { XmlValidator } from 'xml-validator';
 
 const app = express();
 
-app.use(
-    cors({
-        origin: ['http://localhost:3000', 'http://localhost:5173'],
-        credentials: true
-    })
-)
-
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", '*');
-    res.header(
-        "Access-Control-Allow-Hearders",
-        "Origin, X-Requested-With, Content-Type, Accept"
-    );
-    next();
-})
+app.use(cors({
+    origin: ['http://localhost:3000']
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -185,6 +173,18 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     });
 });
 
+app.post('/format/json', async (req, res) => {
+    try {
+        const { json } = req.body;
+        const formattedCode = await format(json, { parser: 'json' });
+        console.log(formattedCode)
+        res.status(200).json({ json: formattedCode });
+    } catch (error) {
+        console.log("Error inside formatting the json");
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // We can pass the code type also in body like code we dont want to specify in url and use switch statement foe code formatting
 app.post('/format/html', async (req, res) => {
     try {
@@ -217,14 +217,14 @@ app.post('/format/css', async (req, res) => {
     }
 });
 
-app.post('/format/js', async (req, res) => {
+app.post('/format/javascript', async (req, res) => {
     try {
-        const { js } = req.body;
-        const prettyJS = beautify.js(js, {
+        const { javascript } = req.body;
+        console.log(javascript)
+        const prettyJS = beautify.js(javascript, {
             indent_size: 4,
         });
-        console.log(prettyJS);
-        return res.status(200).json({ js: prettyJS });
+        return res.status(200).json({ javascript: prettyJS });
     } catch (error) {
         console.log(error);
         res.status(404).json({ error });
@@ -245,9 +245,10 @@ app.post('/format/xml', async (req, res) => {
 });
 
 app.post('/validate/json', async (req, res) => {
-    const { code } = req.body;
+    const { json } = req.body;
     try {
-        await JSON.parse(code);
+        console.log("Inside validate/json")
+        await JSON.parse(json);
         return res.status(200).json({ valid: true });
     } catch (error) {
         return res.status(400).json({ valid: false, error: "Invalid JSON format. Please check the syntax and try again." });
@@ -259,10 +260,10 @@ app.post('/validate/xml', async (req, res) => {
         const { xml } = req.body;
         const validator = new XmlValidator();
         const validation = validator.validate(xml)
-        if(validation.error) {
+        if (validation.error) {
             return res.status(400).json({ valid: false, error: validation.error });
         }
-        return res.status(200).json({ valid: true, result: validation.isValid});
+        return res.status(200).json({ valid: true, result: validation.isValid });
     } catch (error) {
         return res.status(400).json({ valid: false, error: "Invalid XML format. Please check the syntax and try again." });
     }
@@ -272,7 +273,7 @@ app.post('/validate/html', async (req, res) => {
     try {
         const { html } = req.body;
         const document = parse(html);
-        
+
         // Check if the parsed document contains any elements
         const hasElements = document.childNodes.some(node => node.tagName !== undefined);
 
@@ -290,18 +291,18 @@ app.post('/validate/html', async (req, res) => {
 app.post('/validate/css', async (req, res) => {
     try {
         const { css } = req.body;
-        
+
         // Validate CSS using css-validator
-        validateCss({ text: css }, function(err, data) {
+        validateCss({ text: css }, function (err, data) {
             if (err) {
                 return res.status(400).json({ valid: false, error: "Error occurred while validating CSS.", err: err.message });
             }
-            
+
             // Check validation results
             const isValid = data.validity;
             const errors = data.errors || [];
             const warnings = data.warnings || [];
-            
+
             return res.status(200).json({ valid: isValid, errors, warnings });
         });
     } catch (error) {
