@@ -185,7 +185,6 @@ app.post('/format/json', async (req, res) => {
     }
 });
 
-// We can pass the code type also in body like code we dont want to specify in url and use switch statement foe code formatting
 app.post('/format/html', async (req, res) => {
     try {
         const { html } = req.body;
